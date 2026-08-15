@@ -1,0 +1,52 @@
+---
+import "../styles/global.css";
+
+export interface Props {
+  title: string;
+  current: "home" | "projects" | "blog" | "about" | "contact";
+}
+
+const { title } = Astro.props;
+
+const pathname = Astro.url.pathname;
+const cwdDisplay = pathname === "/" ? "~" : "~" + pathname;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <main class="wrap" id="session">
+      <slot />
+    </main>
+
+    <div class="term-input-line">
+      <span class="prompt">gericapo98@site:<span id="term-cwd-prompt">{cwdDisplay}</span>$</span>
+      <input
+        id="term-input"
+        class="term-input"
+        type="text"
+        autocomplete="off"
+        spellcheck="false"
+        aria-label="Terminal command input"
+      />
+    </div>
+    <span id="term-status" class="sr-only" aria-live="polite"></span>
+
+    <div class="crt-overlay" aria-hidden="true"></div>
+
+    <script>
+      import { initTerminal } from "../scripts/terminal";
+      import { runBootSequence } from "../scripts/boot";
+      initTerminal();
+      runBootSequence();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,31 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { getCollection } from "astro:content";
+
+const projects = (await getCollection("projects")).sort(
+  (a, b) => a.data.order - b.data.order
+);
+---
+
+<Layout title="projects — gericapo98" current="projects">
+  <p class="ls-line">
+    <span class="prompt">gericapo98@site:~$</span> <span class="out">ls -la projects/</span>
+  </p>
+
+  {
+    projects.map((p) => (
+      <div class="project-block">
+        <div class="summary-line">
+          <span class="perms">drwxr-xr-x</span>
+          <a href={`/projects/${p.id}`} class="proj-name">{p.data.title}</a>
+        </div>
+        <p class="desc-line">
+          <span class="muted">stack: {p.data.stack} — {p.data.status}</span>
+          {p.data.link ? (
+            <a href={p.data.link} class="view-link">&rarr; view on github</a>
+          ) : null}
+        </p>
+      </div>
+    ))
+  }
+</Layout>

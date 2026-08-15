@@ -1,0 +1,324 @@
+---
+// PhosphorOS — standalone CRT terminal demo.
+// Deliberately self-contained: no shared Layout, no global.css, no site content.
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>PhosphorOS</title>
+  </head>
+  <body>
+    <main
+      id="screen"
+      class="fx-glow fx-scanlines fx-vignette fx-curve fx-flicker fx-rollbar fx-aberration"
+    >
+      <div id="term">
+        <div id="output">
+          <div id="scrollback"></div>
+          <div id="live" hidden><span class="prompt">guest@phosphor:~$ </span><span id="live-before"></span><span class="cursor" aria-hidden="true"></span><span id="live-after"></span></div>
+        </div>
+      </div>
+      <div id="fx-scanlines-overlay" class="overlay" aria-hidden="true"></div>
+      <div id="fx-vignette-overlay" class="overlay" aria-hidden="true"></div>
+      <div id="fx-rollbar-overlay" class="overlay" aria-hidden="true"></div>
+      <input
+        id="kbd"
+        type="text"
+        aria-label="Terminal input"
+        autocomplete="off"
+        autocapitalize="off"
+        autocorrect="off"
+        spellcheck="false"
+      />
+    </main>
+
+    <script src="../scripts/phosphor.ts"></script>
+
+    <style is:global>
+      /* ---- theme ---------------------------------------------------------
+         One phosphor color drives everything. Derived tints recompute
+         automatically when --phosphor changes, so theme switching is a
+         single data attribute. */
+      :root {
+        --phosphor: #33ff33;
+        --phosphor-bright: color-mix(in srgb, var(--phosphor) 60%, white);
+        --phosphor-dim: color-mix(in srgb, var(--phosphor) 55%, transparent);
+        --phosphor-faint: color-mix(in srgb, var(--phosphor) 20%, transparent);
+      }
+      :root[data-theme="amber"] {
+        --phosphor: #ffb000;
+      }
+      :root[data-theme="ice"] {
+        --phosphor: #9fd8ff;
+      }
+
+      /* ---- base ---------------------------------------------------------- */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        background: #101010;
+        overflow: hidden;
+      }
+      ::selection {
+        background: var(--phosphor);
+        color: #000;
+      }
+
+      /* ---- the screen ------------------------------------------------------ */
+      #screen {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        background: radial-gradient(
+          ellipse at center,
+          color-mix(in srgb, var(--phosphor) 5%, #050505) 0%,
+          #050505 70%
+        );
+        color: var(--phosphor);
+        font-family:
+          ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+        font-size: clamp(13px, 1.9vmin, 18px);
+        line-height: 1.4;
+        transform-origin: 50% 50%;
+      }
+
+      /* curve: inset bezel + rounded corners + edge falloff */
+      #screen.fx-curve {
+        inset: 1.5vmin;
+        border-radius: 2vmin;
+        border: 1px solid var(--phosphor-faint);
+        box-shadow: inset 0 0 12vmin rgba(0, 0, 0, 0.9);
+      }
+
+      /* ---- scrollable output ------------------------------------------------ */
+      #term {
+        position: absolute;
+        inset: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: clamp(14px, 5vmin, 64px);
+        scrollbar-width: none;
+      }
+      #term::-webkit-scrollbar {
+        display: none;
+      }
+      .line,
+      #live {
+        white-space: pre-wrap;
+        overflow-wrap: break-word;
+        min-height: 1.4em;
+      }
+      .bright {
+        color: var(--phosphor-bright);
+      }
+      .dim {
+        color: var(--phosphor-dim);
+      }
+
+      /* ---- glow + aberration ------------------------------------------------
+         text-shadow does not stack across rules: a later/more-specific rule
+         REPLACES the earlier one. Both effects set text-shadow on the same
+         text and can be active at once, so three rules are needed — one per
+         single effect, plus a compound-class rule carrying all four shadows,
+         which out-specifies both singles when both classes are present. */
+      .fx-glow #output {
+        text-shadow:
+          0 0 3px var(--phosphor),
+          0 0 14px color-mix(in srgb, var(--phosphor) 26%, transparent);
+      }
+      .fx-aberration #output {
+        text-shadow:
+          1px 0 rgba(255, 0, 80, 0.4),
+          -1px 0 rgba(0, 140, 255, 0.4);
+      }
+      .fx-glow.fx-aberration #output {
+        text-shadow:
+          0 0 3px var(--phosphor),
+          0 0 14px color-mix(in srgb, var(--phosphor) 26%, transparent),
+          1px 0 rgba(255, 0, 80, 0.4),
+          -1px 0 rgba(0, 140, 255, 0.4);
+      }
+
+      /* ---- cursor ------------------------------------------------------------ */
+      .cursor {
+        display: inline-block;
+        width: 0.62em;
+        height: 1.15em;
+        background: var(--phosphor);
+        vertical-align: -0.2em;
+      }
+      .fx-glow .cursor {
+        box-shadow:
+          0 0 3px var(--phosphor),
+          0 0 14px color-mix(in srgb, var(--phosphor) 26%, transparent);
+      }
+
+      /* ---- overlays (all pointer-transparent, all clipped by #screen) ------- */
+      .overlay {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        display: none;
+      }
+      .fx-scanlines #fx-scanlines-overlay {
+        display: block;
+        background: repeating-linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0.28) 0px,
+          rgba(0, 0, 0, 0.28) 1px,
+          transparent 1px,
+          transparent 3px
+        );
+        mix-blend-mode: multiply;
+      }
+      .fx-vignette #fx-vignette-overlay {
+        display: block;
+        background: radial-gradient(
+          ellipse at center,
+          transparent 55%,
+          rgba(0, 0, 0, 0.55) 100%
+        );
+      }
+      .fx-rollbar #fx-rollbar-overlay {
+        display: block;
+        background: linear-gradient(
+          to bottom,
+          transparent,
+          rgba(255, 255, 255, 0.04),
+          transparent
+        );
+        background-size: 100% 30%;
+        background-repeat: no-repeat;
+        background-position: 0 50%; /* static resting spot under reduced motion */
+      }
+
+      /* ---- hidden keystroke-capture input ------------------------------------ */
+      #kbd {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        overflow: hidden;
+        border: 0;
+        outline: none;
+        background: transparent;
+        color: transparent;
+      }
+
+      /* ---- motion (everything animated lives inside this query) ------------- */
+      @media (prefers-reduced-motion: no-preference) {
+        .cursor {
+          animation: blink 1.06s steps(1, end) infinite;
+        }
+        #screen.fx-flicker {
+          animation: flicker 6.4s linear infinite;
+        }
+        .fx-rollbar #fx-rollbar-overlay {
+          animation: rollbar 9s linear infinite;
+        }
+        /* power cycle — id selector out-specifies .fx-flicker's animation */
+        #screen.power-off {
+          animation: power-off 0.5s cubic-bezier(0.55, 0, 0.9, 1) forwards;
+        }
+        #screen.power-on {
+          animation: power-on 0.35s cubic-bezier(0.1, 0, 0.45, 1) forwards;
+        }
+      }
+
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0;
+        }
+      }
+
+      /* irregular, barely-perceptible brightness dips */
+      @keyframes flicker {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        7% {
+          opacity: 0.96;
+        }
+        13% {
+          opacity: 1;
+        }
+        22% {
+          opacity: 0.94;
+        }
+        29% {
+          opacity: 1;
+        }
+        52% {
+          opacity: 0.97;
+        }
+        61% {
+          opacity: 1;
+        }
+        80% {
+          opacity: 0.95;
+        }
+        87% {
+          opacity: 1;
+        }
+      }
+
+      /* -50% -> 150% with a 30%-tall band = starts fully above, exits fully below */
+      @keyframes rollbar {
+        from {
+          background-position: 0 -50%;
+        }
+        to {
+          background-position: 0 150%;
+        }
+      }
+
+      @keyframes power-off {
+        0% {
+          transform: scale(1, 1);
+          filter: brightness(1);
+        }
+        60% {
+          transform: scale(1, 0.012);
+          filter: brightness(2.4);
+        }
+        100% {
+          transform: scale(0.001, 0.012);
+          filter: brightness(6);
+        }
+      }
+
+      @keyframes power-on {
+        0% {
+          transform: scale(0.001, 0.012);
+          filter: brightness(6);
+        }
+        45% {
+          transform: scale(1, 0.012);
+          filter: brightness(2.4);
+        }
+        100% {
+          transform: scale(1, 1);
+          filter: brightness(1);
+        }
+      }
+    </style>
+  </body>
+</html>

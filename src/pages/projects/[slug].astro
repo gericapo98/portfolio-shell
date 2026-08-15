@@ -1,0 +1,34 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { getCollection, render } from "astro:content";
+
+export async function getStaticPaths() {
+  const entries = await getCollection("projects");
+  return entries.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+---
+
+<Layout title={`${entry.data.title} — gericapo98`} current="projects">
+  <p class="cmd-line">
+    <span class="prompt">gericapo98@site:~/projects/{entry.id}$</span> <span class="out">cat README.md</span>
+  </p>
+
+  <div class="post-body">
+    <Content />
+  </div>
+
+  <p class="meta-line muted">stack: {entry.data.stack}</p>
+  <p class="meta-line muted">status: {entry.data.status}</p>
+
+  {entry.data.link ? (
+    <p class="meta-line"><a href={entry.data.link}>&rarr; view on github</a></p>
+  ) : (
+    <p class="meta-line muted">(not yet public)</p>
+  )}
+</Layout>

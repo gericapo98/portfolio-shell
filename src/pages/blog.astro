@@ -1,0 +1,36 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { getCollection } from "astro:content";
+
+const posts = (await getCollection("blog", (entry) => !entry.data.draft)).sort(
+  (a, b) => new Date(b.data.date).valueOf() - new Date(a.data.date).valueOf()
+);
+---
+
+<Layout title="blog — gericapo98" current="blog">
+  <p class="cmd-line">
+    <span class="prompt">gericapo98@site:~$</span> <span class="out">ls blog/</span>
+  </p>
+
+  {
+    posts.length === 0 ? (
+      <p class="muted">(empty — first post pending)</p>
+    ) : (
+      posts.map((post) => (
+        <div class="post-block">
+          <p class="cmd-line">
+            <span class="prompt">gericapo98@site:~$</span>{" "}
+            <span class="out">cat posts/{post.id}.md</span>
+          </p>
+          <p class="post-meta">
+            <a href={`/blog/${post.id}`}>{post.data.title}</a>
+            <br />
+            <span class="muted">{post.data.date}</span>
+            <br />
+            {post.data.description}
+          </p>
+        </div>
+      ))
+    )
+  }
+</Layout>

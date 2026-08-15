@@ -1,0 +1,425 @@
+:root {
+  --bg: #020602;
+  --surface: #020602; /* same as bg -- flat black, structure comes from --line hairlines only */
+  --text: #33ff33;
+  --muted: rgba(51, 255, 51, 0.55);
+  --accent: #d6ffd6;
+  --line: rgba(51, 255, 51, 0.25);
+  --error: #33ff33; /* no longer a distinct color -- errors use inverse video, see .term-error */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "VT323", ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 19px;
+  line-height: 1.55;
+  text-shadow: 0 0 2px currentColor;
+}
+
+.wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 1rem 3rem;
+  text-align: left;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.prompt {
+  color: var(--accent);
+  text-shadow: 0 0 3px currentColor, 0 0 8px rgba(51, 255, 51, 0.5);
+}
+
+/* Hottest phosphor: every element rendered in --accent gets the stronger glow */
+.term-dir-link,
+.proj-name,
+.view-link,
+.meta-line a,
+.post-meta a,
+.post-body a,
+.key {
+  text-shadow: 0 0 3px currentColor, 0 0 8px rgba(51, 255, 51, 0.5);
+}
+
+.out {
+  color: var(--text);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+/* Cursor */
+.cursor {
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  background: var(--accent);
+  vertical-align: text-bottom;
+  opacity: 1;
+  box-shadow: 0 0 3px var(--accent), 0 0 8px rgba(51, 255, 51, 0.5);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cursor {
+    animation: blink 1s step-end infinite;
+  }
+}
+
+@keyframes blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Live terminal scrollback (client-appended blocks) */
+.term-line {
+  margin: 0.15rem 0;
+  white-space: pre-wrap;
+}
+
+.term-block {
+  margin: 0 0 0.5rem;
+}
+
+.term-error {
+  background: var(--text);
+  color: var(--bg);
+  padding: 0 0.3em;
+  text-shadow: none;
+}
+
+.term-perms {
+  color: var(--muted);
+  white-space: pre;
+}
+
+.term-dir-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.term-dir-link:hover,
+.term-dir-link:focus-visible {
+  text-decoration: underline;
+}
+
+.term-file-link {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.term-file-link:hover,
+.term-file-link:focus-visible {
+  text-decoration: underline;
+}
+
+/* Live input line -- the current last line of the same terminal, not a toolbar */
+.term-input-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 1rem 1rem;
+}
+
+/* Wraps the input once JS runs, so a fake block cursor can be positioned
+   over it -- see setupFakeCursor() in terminal.ts. Without JS, .term-input
+   below is never moved into this wrapper and just keeps its normal native
+   caret, so nothing here matters in that fallback case. */
+.term-input-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.term-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  color: var(--text);
+  font: inherit;
+  caret-color: var(--accent);
+}
+
+/* Invisible twin of the input's text up to the caret, used only to measure
+   where the fake cursor block belongs. */
+.term-mirror {
+  position: absolute;
+  top: 0;
+  left: 0;
+  visibility: hidden;
+  white-space: pre;
+}
+
+.term-fake-cursor {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+}
+
+/* Screen-reader-only utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Page content: about.astro (bare element rules, scoped to page content only) */
+#session p {
+  margin: 0 0 1.25rem;
+}
+
+#session pre {
+  margin: 0 0 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+#session code {
+  font-family: inherit;
+  white-space: pre;
+}
+
+.key {
+  color: var(--accent);
+}
+
+.str {
+  color: var(--text);
+}
+
+.punc {
+  color: var(--muted);
+}
+
+/* Page content: index.astro */
+.line {
+  margin: 0.15rem 0;
+}
+
+.line.out {
+  margin-bottom: 0.5rem;
+}
+
+.project a,
+.see-all a {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.project a:hover,
+.project a:focus-visible,
+.see-all a:hover,
+.see-all a:focus-visible {
+  color: var(--accent);
+}
+
+/* Page content: projects.astro (listing) */
+.ls-line {
+  margin: 0 0 1.5rem;
+}
+
+.project-block {
+  margin-bottom: 1.25rem;
+}
+
+.summary-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6em;
+  margin: 0;
+}
+
+.perms {
+  color: var(--muted);
+  white-space: pre;
+}
+
+.proj-name {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.proj-name:hover,
+.proj-name:focus-visible {
+  text-decoration: underline;
+}
+
+.desc-line {
+  margin: 0.25rem 0 0 1.85rem;
+}
+
+.view-link {
+  color: var(--accent);
+  text-decoration: none;
+  margin-left: 0.6em;
+}
+
+.view-link:hover,
+.view-link:focus-visible {
+  text-decoration: underline;
+}
+
+/* Page content: projects/[slug].astro + blog/[slug].astro (shared prose block) */
+.cmd-line {
+  margin: 1.5rem 0 1rem;
+}
+
+.post-body {
+  color: var(--text);
+}
+
+.post-body p {
+  margin: 0 0 1.25rem;
+}
+
+.post-body a {
+  color: var(--accent);
+}
+
+.post-body pre {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.meta-line {
+  margin: 0.25rem 0;
+}
+
+.meta-line a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.meta-line a:hover,
+.meta-line a:focus-visible {
+  text-decoration: underline;
+}
+
+.post-header {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.post-header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.4rem;
+  color: var(--text);
+}
+
+.post-header p {
+  margin: 0;
+}
+
+/* Page content: blog.astro (listing) */
+.post-block {
+  margin-bottom: 1.25rem;
+}
+
+.post-meta {
+  margin: 0 0 0 1rem;
+}
+
+.post-meta a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.post-meta a:hover,
+.post-meta a:focus-visible {
+  text-decoration: underline;
+}
+
+/* CRT screen overlay: scanlines + vignette + very slow flicker */
+.crt-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background-image: repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0) 1px,
+      rgba(0, 0, 0, 0.18) 2px,
+      rgba(0, 0, 0, 0) 3px
+    ),
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .crt-overlay {
+    animation: crtFlicker 6s infinite;
+  }
+}
+
+@keyframes crtFlicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.94;
+  }
+}
+
+/* JS-created boot overlay (see src/scripts/boot.ts) -- never server-rendered */
+.boot-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "VT323", ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 19px;
+  line-height: 1.55;
+  padding: 1.5rem 1rem;
+  white-space: pre-wrap;
+  text-shadow: 0 0 2px currentColor;
+  transition: opacity 0.25s ease-out;
+}
+
+.boot-overlay .boot-line {
+  margin: 0.15rem 0;
+  opacity: 0;
+  transition: opacity 0.15s ease-in;
+}
+
+.boot-overlay .boot-line.visible {
+  opacity: 1;
+}
